@@ -4,27 +4,28 @@ __author__ = 'joelbremson'
 __date__ = "1/7/14"
 
 import os
-import readline
+import subprocess
 
 #Test file for git koans
 
 def reset():
     print ("Resetting koans to initial state...")
     # make this safer
-    os.system("rm -rf ../git_koans/work/")
-    os.system("mkdir ../git_koans/work/")
+    subprocess.check_output("rm -rf ../git_test/work/",stderr=subprocess.STDOUT,shell=True)
+    subprocess.check_output("mkdir ../git_test/work/",stderr=subprocess.STDOUT, shell=True)
+    subprocess.check_output("touch ../git_test/work/.empty",stderr=subprocess.STDOUT, shell=True)
 
 
 def koan_1():
     out =  raw_input("Koan 1: Init git in the /work directory... (hint: git init ./work)\n>>")
-    retval = os.system(out)
+    retval = subprocess.check_output(out,shell=True)
 
     # check to see if there is a .git dir in work...
 
     if(os.path.isdir("./work/.git")):
-        print ("Init enlightenment attained. On to the next koan.")
+        print ("\n\nInit enlightenment attained. On to the next koan! \n\n")
     else:
-        print ("Try it again.")
+        print ("\n\nThrough failure learning is achieved. Try it again.\n\n")
         koan_1();
 
 
