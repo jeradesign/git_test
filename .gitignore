@@ -1,0 +1,2 @@
+# don't track the .git file in work
+git-test/work/.git
