@@ -12,8 +12,7 @@ import re
 
 class State:
 
-
-    state = {}
+    keep = {'counter':1}
 
     def __init__(self):
         """Set up koan system. Check for prior use so user can continue without
@@ -22,42 +21,32 @@ class State:
 
         try:
             f = open("../git_test/.koans_state")
-            state = pickle.load(f)
+            inval = pickle.load(f)
+            State.keep['counter'] = inval['counter']
 
         except (AttributeError,IOError):
             # not prior state to return to.
             print "In exception of __init__"
-            state['counter']=1
 
             f = open("../git_test/.koans_state","w")
-            pickle.dump(self.state,f)
+            pickle.dump(State.keep,f)
             f.close()
 
     @classmethod
     def inc_counter(cls):
-        cls.state['counter'] += 1
-        cls.update_state('counter', cls.state['counter'])
+        State.keep['counter'] += 1
 
     @classmethod
-    def update_state(cls,key,val):
-        """Increment the counter state."""
-        cls.state[key]=val
+    def save_state(cls):
         f = open("../git_test/.koans_state","w")
-        pickle.dump(cls.state,f)
+        pickle.dump(State.keep,f)
         f.close()
 
     @classmethod
     def get_counter(cls):
         """Returns the value of counter."""
-        return cls.state['counter']
+        return State.keep['counter']
 
-    def __getattr__(self, name):
-        """Pass through calls to State to the 'state' dict handlers."""
-        def handler_function(*args,**kwargs):
-            print name
-            return getattr(self.state,name,args)()
-        return handler_function
-        
 
 def reset():
     print ("Resetting koans to initial state...")
@@ -83,6 +72,7 @@ def cmd(cmd):
 
 
 def koan_1():
+    print State.get_counter()
     out =  raw_input("Koan 1: Init git in the /work directory... (hint: git init ./work)\n>>")
     retval = cmd(out)
 
@@ -96,6 +86,7 @@ def koan_1():
         koan_1();
 
 def koan_2():
+    print State.get_counter()
     cwd = os.getcwd()
     final =  cwd.split("/")[-1]
     if not final == "work":
@@ -120,9 +111,13 @@ def koan_2():
         koan_2()
 
 
+def koan_3():
+    """Commit file."""
+    print State.get_counter()
+    print "\n\nKoan 3: Now we will commit the new file.\n\n>>"
 
 print "Welcome to git-koans..."
-print State.get_counter()
+reset()
 
 
 # this should store state so user doesn't have to repeat with restart.
