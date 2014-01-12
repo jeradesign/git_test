@@ -48,6 +48,11 @@ class State:
         cls.save_state()
 
     @classmethod
+    def reset_counter(cls):
+        cls.keep['counter'] = 1
+        cls.save_state()
+
+    @classmethod
     def save_state(cls):
         f = open("../git_test/.koans_state","w")
         pickle.dump(cls.keep,f)
@@ -59,11 +64,12 @@ class State:
         return cls.keep['counter']
 
 
-def reset():
+def sys_reset():
     print ("Resetting koans to initial state...")
     # make this safer
     cmd("rm -rf ../git_test/work/")
     #cmd("rm -rf ../git_test/.koans_state")
+    State.reset_counter()
     cmd("mkdir ../git_test/work/")
     cmd("touch ../git_test/work/.empty")
 
@@ -85,23 +91,30 @@ def koan(fxn):
     """Prints koan header and increments state counter (given the koan is passed)."""
     def new_fxn(*args,**kwargs):
         header = kwargs.get('header',True)
+
         if header:
             print "\n\n********  Koan " + str(State.get_counter()) + "  ********\n\n"
-        success = fxn()
+        success = fxn(*args,**kwargs)
         if success: # success
             print "\n\nEnlightenment Achieved!"
             State.inc_counter()
         else: # failed
             print ("\n\nThrough failure learning is achieved. Try it again.\n\n")
             globals()[fxn.__name__](header=False)
+        return success
     return new_fxn
 
 @koan
-def koan_1():
+def koan_1(*args,**kwargs):
     """Init the first repo."""
     retval = False
-    out =  raw_input("Koan 1: Init git in the /work directory... (hint: git init ./work)\n>>")
-    cmd_ret = cmd(out)
+    test = 'test' in args
+    answers = kwargs.get('answers',None)
+    if test:
+        cmd_ret = cmd(answers[0])
+    else:
+        out =  raw_input("Koan 1: Init git in the /work directory... (hint: git init ./work)\n>>")
+        cmd_ret = cmd(out)
 
     # check to see if there is a .git dir in work...
 
@@ -110,18 +123,26 @@ def koan_1():
     return retval
 
 @koan
-def koan_2():
+def koan_2(*args,**kwargs):
     """Add a file."""
     cwd = os.getcwd()
     ret_val = False
     final =  cwd.split("/")[-1]
     if not final == "work":
         os.chdir("./work")
-    out = raw_input("Koan 2: Now we will add a file to the 'work' repo. First create " +
+    test = 'test' in args
+    if test:
+        out = kwargs['answers'][0]
+    else:
+        out = raw_input("Koan 2: Now we will add a file to the 'work' repo. First create " +
                     "an empty file called 'foo' (hint: touch foo)\n>>");
+
     retval = cmd(out)
     if os.path.isfile("./foo"):
-        out = raw_input("\n\n. Good. Now add the file to git with 'git add foo'\n>>")
+        if test:
+            out = kwargs['answers'][1]
+        else:
+            out = raw_input("\n\n. Good. Now add the file to git with 'git add foo'\n>>")
         ret = cmd(out)
         git_status = cmd("git status")
         out = re.search("new file:\s+foo",git_status)
@@ -133,7 +154,7 @@ def koan_2():
     return ret_val
 
 @koan
-def koan_3():
+def koan_3(*args,**kwargs):
     """Commit file."""
     ret_val = False
     print "\n\nNow we will commit the new file.\n\n>>"
@@ -145,7 +166,7 @@ def koan_3():
 if __name__ == "__main__":
     print "Welcome to git-koans...\n"
     if State.get_counter()==1:
-        reset()
+        sys_reset()
     else:
         print "\n\nContinuing from koan " + str(State.get_counter()) + "\n\n"
 
