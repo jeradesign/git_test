@@ -17,6 +17,7 @@ import os
 import pickle
 import subprocess
 import re
+from collections import deque
 
 #Test file for git koans
 
@@ -91,7 +92,7 @@ def koan(fxn):
     """Prints koan header and increments state counter (given the koan is passed)."""
     def new_fxn(*args,**kwargs):
         header = kwargs.get('header',True)
-
+        test,answers = test_vals(*args,**kwargs)
         if header:
             print "\n\n********  Koan " + str(State.get_counter()) + "  ********\n\n"
         success = fxn(*args,**kwargs)
@@ -100,18 +101,26 @@ def koan(fxn):
             State.inc_counter()
         else: # failed
             print ("\n\nThrough failure learning is achieved. Try it again.\n\n")
-            globals()[fxn.__name__](header=False)
+            if not test:
+                # something in here?? ::w
+
+                globals()[fxn.__name__](header=False)
         return success
     return new_fxn
+
+def test_vals(*args, **kwargs):
+    """Return vals in args and kwargs used for testing. Returns <bool test>,<list answers>."""
+    test = 'test' in args
+    answers = deque(kwargs.get('answers',[]))
+    return test, answers
 
 @koan
 def koan_1(*args,**kwargs):
     """Init the first repo."""
     retval = False
-    test = 'test' in args
-    answers = kwargs.get('answers',None)
+    test,answers = test_vals(*args,**kwargs)
     if test:
-        cmd_ret = cmd(answers[0])
+        cmd_ret = cmd(answers.popleft())
     else:
         out =  raw_input("Koan 1: Init git in the /work directory... (hint: git init ./work)\n>>")
         cmd_ret = cmd(out)
@@ -125,14 +134,14 @@ def koan_1(*args,**kwargs):
 @koan
 def koan_2(*args,**kwargs):
     """Add a file."""
+    test,answers = test_vals(*args,**kwargs)
     cwd = os.getcwd()
     ret_val = False
     final =  cwd.split("/")[-1]
     if not final == "work":
-        os.chdir("./work")
-    test = 'test' in args
+        os.chdir("../git_test/work")
     if test:
-        out = kwargs['answers'][0]
+        out = answers.popleft()
     else:
         out = raw_input("Koan 2: Now we will add a file to the 'work' repo. First create " +
                     "an empty file called 'foo' (hint: touch foo)\n>>");
@@ -140,25 +149,44 @@ def koan_2(*args,**kwargs):
     retval = cmd(out)
     if os.path.isfile("./foo"):
         if test:
-            out = kwargs['answers'][1]
+            out = answers.popleft()
         else:
             out = raw_input("\n\n. Good. Now add the file to git with 'git add foo'\n>>")
         ret = cmd(out)
         git_status = cmd("git status")
         out = re.search("new file:\s+foo",git_status)
 
-        if out.group():
-            ret_val = True
-            print " File added to the repo. Now we will go to commit it in Koan 3.\n\n"
+        try:
+            if out.group():
+                ret_val = True
+                print "File added to the repo. Now we will go to commit it in Koan 3.\n\n"
+                os.chdir("..")
+        except AttributeError:
             os.chdir("..")
+            pass
     return ret_val
 
 @koan
 def koan_3(*args,**kwargs):
     """Commit file."""
+    test,answers = test_vals(*args,**kwargs)
     ret_val = False
-    print "\n\nNow we will commit the new file.\n\n>>"
-    return True
+    loc = os.getcwd()
+    os.chdir("../git_test/work")
+    if test:
+        out = answers.popleft()
+    else:
+        out = raw_input("Now commit the file.\n>>")
+    rv = cmd(out)
+    print rv
+    out = re.search("\[master \(root\-commit\)", rv )
+    try:
+        if out.group():
+            ret_val = True
+    except AttributeError:
+        pass
+    os.chdir("..")
+    return ret_val
 
 
 
