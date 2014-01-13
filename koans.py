@@ -26,6 +26,7 @@ class State:
     restart. This will only work if the user hasn't altered the archive state."""
 
     keep = {'counter':1}
+    workdir = "../git_test/work"
 
 
     print "Init called.\n"
@@ -74,13 +75,15 @@ def sys_reset():
     cmd("mkdir ../git_test/work/")
     cmd("touch ../git_test/work/.empty")
 
-def cmd(cmd):
+def cmd(cmd,verbose=False):
     """Calls subprocess.check_output with 'shell=True' and stderr redirection. Returns
-    return val from subprocess. Short cut."""
+    return val from subprocess. 'verbose' flag is a boolean. Set to true for debugging info. Short cut."""
     proc = subprocess.Popen([cmd],stdout=subprocess.PIPE,stderr=subprocess.STDOUT, shell=True);
     out = ""
     while True:
         line = proc.stdout.readline()
+        if verbose:
+            print line
         if line != '':
             out += " " + line.rstrip()
         else:
@@ -151,7 +154,9 @@ def koan_2(*args,**kwargs):
         if test:
             out = answers.popleft()
         else:
-            out = raw_input("\n\n. Good. Now add the file to git with 'git add foo'\n>>")
+            print """\n\nYou have now created what git calls an 'untracked file'. Next we
+will make it tracked by officially adding it to the repository."""
+            out = raw_input("\n\n. Add the file to git with 'git add foo'\n>>")
         ret = cmd(out)
         git_status = cmd("git status")
         out = re.search("new file:\s+foo",git_status)
@@ -159,7 +164,9 @@ def koan_2(*args,**kwargs):
         try:
             if out.group():
                 ret_val = True
-                print "File added to the repo. Now we will go to commit it in Koan 3.\n\n"
+                print """The file has been added. It is now a 'tracked file.' The add command does
+more than just add to the repo though, as we will see later."""
+                print "\n\nNext we will learn about basic commits.\n\n"
                 os.chdir("..")
         except AttributeError:
             os.chdir("..")
@@ -176,7 +183,8 @@ def koan_3(*args,**kwargs):
     if test:
         out = answers.popleft()
     else:
-        out = raw_input("Now commit the file.\n>>")
+        out = raw_input("Now commit your changes with the 'git commit -a' command. Note that\nyou" +
+"are in your repo directory 'work'. Also, you will need to add a message to your commit. How?\n./work >>")
     rv = cmd(out)
     print rv
     out = re.search("\[master \(root\-commit\)", rv )
@@ -188,12 +196,60 @@ def koan_3(*args,**kwargs):
     os.chdir("..")
     return ret_val
 
+@koan
+def koan_4(*args,**kwargs):
+    """.gitignore koan."""
+    test,answers=test_vals(*args,**kwargs)
+    retval = False
+    print """For this koan you will need to open another shell window. When you are ready
+I will check your work for you."""
 
+    print """\n\nThis koan is about the '.gitignore' file feature. Sometimes you have files
+you don't want git to ever track.\n\n.In your /work repo create a .gitignore
+file that does 1) ignores files called 'baz' and 2) ignores any files that match *.a ."""
+    os.chdir(State.workdir)
+    if not test:
+        raw_input("Press any key when you are done.")
+    out = cmd("echo 'text' > baz")
+    out = cmd("echo 'text' > dfsdf.a")
+
+    out = cmd("git add baz" )
+    match1 = re.search(".*ignored.*baz",out)
+    print out
+
+
+    out = cmd("git add dfsdf.a" )
+    match2 = re.search(".*ignored.*dfsdf.a",out)
+    print out
+    try:
+        if match1.group():
+            print "\n\nFile 'baz' ignored."
+        if match2.group():
+            print "File 'dfsdf.a ignored.\n\n"
+        retval = True
+        print "*** Koan Success! ***\n"
+    except AttributeError:
+        out = cmd("git status")
+        print out
+        out = cmd("git reset HEAD baz")
+        print out
+        out = cmd("git reset HEAD dfsdf.a")
+        print out
+        out = cmd("git status")
+        print out
+        pass
+
+    os.chdir("..")
+    return retval
 
 
 if __name__ == "__main__":
     print "Welcome to git-koans...\n"
-    if State.get_counter()==1:
+    print """\n\nThese koans cover the basic concepts from Pro Git by Scott Chacon (http://git-scm.com/book).
+See chapter 2 for assistance - http://git-scm.com/book/en/Git-Basics ."""
+
+
+    if State.get_counter()==1 or raw_input("reset?")=="y":
         sys_reset()
     else:
         print "\n\nContinuing from koan " + str(State.get_counter()) + "\n\n"
