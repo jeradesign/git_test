@@ -242,6 +242,13 @@ file that does 1) ignores files called 'baz' and 2) ignores any files that match
     os.chdir("..")
     return retval
 
+def koan_5(*args,**kwargs):
+	"""This koan is a small puzzle in which the user is asked to figure out which file has been 
+modified since staging. The answer can be found with diff."""
+
+
+
+	return True # so it passes the test for now.
 
 if __name__ == "__main__":
     print "Welcome to git-koans...\n"
